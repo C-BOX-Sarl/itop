@@ -35,10 +35,12 @@ class LinkedSetField extends Field
 	/** @var bool DEFAULT_DISPLAY_OPENED */
 	const DEFAULT_DISPLAY_OPENED = false;
 	/** @var bool DEFAULT_DISPLAY_LIMITED_ACCESS_ITEMS */
-	const DEFAULT_DISPLAY_LIMITED_ACCESS_ITEMS = false; 
-	
+	const DEFAULT_DISPLAY_LIMITED_ACCESS_ITEMS = false;
+
 	/** @var string $sTargetClass */
 	protected $sTargetClass;
+	/** @var string $sLinkedClass */
+	protected $sLinkedClass;
 	/** @var string $sExtKeyToRemote */
 	protected $sExtKeyToRemote;
 	/** @var bool $bIndirect */
@@ -51,6 +53,8 @@ class LinkedSetField extends Field
 	protected $aLimitedAccessItemIDs;
 	/** @var array $aAttributesToDisplay */
 	protected $aAttributesToDisplay;
+	/** @var array $aLnkAttributesToDisplay */
+	protected $aLnkAttributesToDisplay;
 	/** @var string $sSearchEndpoint */
 	protected $sSearchEndpoint;
 	/** @var string $sInformationEndpoint */
@@ -68,6 +72,7 @@ class LinkedSetField extends Field
 		$this->bDisplayLimitedAccessItems = static::DEFAULT_DISPLAY_LIMITED_ACCESS_ITEMS;
 		$this->aLimitedAccessItemIDs = array();
 		$this->aAttributesToDisplay = array();
+		$this->aLnkAttributesToDisplay = array();
 		$this->sSearchEndpoint = null;
 		$this->sInformationEndpoint = null;
 
@@ -92,6 +97,28 @@ class LinkedSetField extends Field
 	public function SetTargetClass(string $sTargetClass)
 	{
 		$this->sTargetClass = $sTargetClass;
+
+		return $this;
+	}
+
+	/**
+	 *
+	 * @return string
+	 */
+	public function GetLinkedClass()
+	{
+		return $this->sLinkedClass;
+	}
+
+	/**
+	 *
+	 * @param string $sLinkedClass
+	 *
+	 * @return $this
+	 */
+	public function SetLinkedClass(string $sLinkedClass)
+	{
+		$this->sLinkedClass = $sLinkedClass;
 
 		return $this;
 	}
@@ -233,6 +260,31 @@ class LinkedSetField extends Field
 	public function SetAttributesToDisplay(array $aAttributesToDisplay)
 	{
 		$this->aAttributesToDisplay = $aAttributesToDisplay;
+
+		return $this;
+	}
+
+	/**
+	 * Returns a hash array of attributes to be displayed in the linkedset in the form $sAttCode => $sAttLabel
+	 *
+	 * @param boolean $bAttCodesOnly If set to true, will return only the attcodes
+	 *
+	 * @return array
+	 */
+	public function GetLnkAttributesToDisplay(bool $bAttCodesOnly = false)
+	{
+		return ($bAttCodesOnly) ? array_keys($this->aLnkAttributesToDisplay) : $this->aLnkAttributesToDisplay;
+	}
+
+	/**
+	 *
+	 * @param array $aAttributesToDisplay
+	 *
+	 * @return $this
+	 */
+	public function SetLnkAttributesToDisplay(array $aAttributesToDisplay)
+	{
+		$this->aLnkAttributesToDisplay = $aAttributesToDisplay;
 
 		return $this;
 	}

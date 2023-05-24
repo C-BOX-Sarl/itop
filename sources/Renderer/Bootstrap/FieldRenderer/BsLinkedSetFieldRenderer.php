@@ -22,6 +22,10 @@ namespace Combodo\iTop\Renderer\Bootstrap\FieldRenderer;
 
 use ApplicationContext;
 use AttributeFriendlyName;
+use Combodo\iTop\Form\Field\Field;
+use Combodo\iTop\Renderer\Bootstrap\BsFieldRendererMappings;
+use Combodo\iTop\Renderer\FieldRenderer;
+use DBObject;
 use Dict;
 use Exception;
 use IssueLog;
@@ -43,52 +47,54 @@ class BsLinkedSetFieldRenderer extends BsFieldRenderer
      */
 	public function Render()
 	{
-	    $oOutput = parent::Render();
+		$oOutput = parent::Render();
 
 		$sFieldMandatoryClass = ($this->oField->GetMandatory()) ? 'form_mandatory' : '';
 		$sFieldDescriptionForHTMLTag = ($this->oField->HasDescription()) ? 'data-tooltip-content="'.utils::HtmlEntities($this->oField->GetDescription()).'"' : '';
+
+		// Merge lnk and remote class attributes to display
+		$aAttributesToDisplay = array_merge($this->oField->GetLnkAttributesToDisplay(), $this->oField->GetAttributesToDisplay());
+
 		// Vars to build the table
-		$sAttributesToDisplayAsJson = json_encode($this->oField->GetAttributesToDisplay());
+		$sAttributesToDisplayAsJson = json_encode($aAttributesToDisplay);
 		$sAttCodesToDisplayAsJson = json_encode($this->oField->GetAttributesToDisplay(true));
+		$sLnkAttCodesToDisplayAsJson = json_encode($this->oField->GetLnkAttributesToDisplay(true));
+
+
 		$aItems = array();
 		$aItemIds = array();
-		$this->PrepareItems($aItems, $aItemIds);
+		$this->PrepareItems($aItems, $aItemIds, $oOutput);
 		$sItemsAsJson = json_encode($aItems);
 		$sItemIdsAsJson = utils::EscapeHtml(json_encode(array('current' => $aItemIds)));
 
-        if (!$this->oField->GetHidden())
-		{
+		if (!$this->oField->GetHidden()) {
 			// Rendering field
 			$sIsEditable = ($this->oField->GetReadOnly()) ? 'false' : 'true';
 			$sCollapseTogglerIconVisibleClass = 'glyphicon-menu-down';
 			$sCollapseTogglerIconHiddenClass = 'glyphicon-menu-down collapsed';
 			$sCollapseTogglerClass = 'form_linkedset_toggler';
-			$sCollapseTogglerId = $sCollapseTogglerClass . '_' . $this->oField->GetGlobalId();
-			$sFieldWrapperId = 'form_linkedset_wrapper_' . $this->oField->GetGlobalId();
+			$sCollapseTogglerId = $sCollapseTogglerClass.'_'.$this->oField->GetGlobalId();
+			$sFieldWrapperId = 'form_linkedset_wrapper_'.$this->oField->GetGlobalId();
 
 			// Preparing collapsed state
-            if($this->oField->GetDisplayOpened())
-            {
-                $sCollapseTogglerExpanded = 'true';
-                $sCollapseTogglerIconClass = $sCollapseTogglerIconVisibleClass;
-                $sCollapseJSInitState = 'true';
-            }
-            else
-            {
-                $sCollapseTogglerClass .= ' collapsed';
-                $sCollapseTogglerExpanded = 'false';
-                $sCollapseTogglerIconClass = $sCollapseTogglerIconHiddenClass;
-                $sCollapseJSInitState = 'false';
-            }
+			if ($this->oField->GetDisplayOpened()) {
+				$sCollapseTogglerExpanded = 'true';
+				$sCollapseTogglerIconClass = $sCollapseTogglerIconVisibleClass;
+				$sCollapseJSInitState = 'true';
+			} else {
+				$sCollapseTogglerClass .= ' collapsed';
+				$sCollapseTogglerExpanded = 'false';
+				$sCollapseTogglerIconClass = $sCollapseTogglerIconHiddenClass;
+				$sCollapseJSInitState = 'false';
+			}
 
-			$oOutput->AddHtml('<div class="form-group ' . $sFieldMandatoryClass . '">');
-			if ($this->oField->GetLabel() !== '')
-			{
-				$oOutput->AddHtml('<label for="' . $this->oField->GetGlobalId() . '" class="control-label" '.$sFieldDescriptionForHTMLTag.'>')
-					->AddHtml('<a id="' . $sCollapseTogglerId . '" class="' . $sCollapseTogglerClass . '" data-toggle="collapse" href="#' . $sFieldWrapperId . '" aria-expanded="' . $sCollapseTogglerExpanded . '" aria-controls="' . $sFieldWrapperId . '">')
+			$oOutput->AddHtml('<div class="form-group '.$sFieldMandatoryClass.'">');
+			if ($this->oField->GetLabel() !== '') {
+				$oOutput->AddHtml('<label for="'.$this->oField->GetGlobalId().'" class="control-label" '.$sFieldDescriptionForHTMLTag.'>')
+					->AddHtml('<a id="'.$sCollapseTogglerId.'" class="'.$sCollapseTogglerClass.'" data-toggle="collapse" href="#'.$sFieldWrapperId.'" aria-expanded="'.$sCollapseTogglerExpanded.'" aria-controls="'.$sFieldWrapperId.'">')
 					->AddHtml($this->oField->GetLabel(), true)
-					->AddHtml('<span class="text">' . count($aItemIds) . '</span>')
-					->AddHtml('<span class="glyphicon ' . $sCollapseTogglerIconClass . '"></>')
+					->AddHtml('<span class="text">'.count($aItemIds).'</span>')
+					->AddHtml('<span class="glyphicon '.$sCollapseTogglerIconClass.'"></>')
 					->AddHtml('</a>')
 					->AddHtml('</label>');
 			}
@@ -339,6 +345,9 @@ JS
 						//
 						// Old code : value = JSON.parse(me.element.find('#{$this->oField->GetGlobalId()}').val());
 						value = me.element.find('#{$this->oField->GetGlobalId()}').val();
+						
+						console.log('what is the current value ?');
+						console.log(value);
 
 						return value;
 					},
@@ -351,16 +360,25 @@ JS
 
 							// Retrieving new rows ids
 							var aObjectIds = Object.keys(oData.values);
+							
+							console.log('what is object id ?');
+							console.log(aObjectIds);
 
 							// Retrieving rows informations so we can add them
 							$.post(
 								'{$sObjectInformationsUrl}',
 								{
 									sObjectClass: '{$this->oField->GetTargetClass()}',
+									sLinkClass: '{$this->oField->GetLinkedClass()}',
 									aObjectIds: aObjectIds,
-									aObjectAttCodes: $sAttCodesToDisplayAsJson
+									aObjectAttCodes: $sAttCodesToDisplayAsJson,
+									aLinkAttCodes: $sLnkAttCodesToDisplayAsJson,
 								},
 								function(oData){
+								
+									console.log('there is new data !');
+									console.log(oData);
+								
 									// Updating datatables
 									if(oData.items !== undefined)
 									{
@@ -455,6 +473,9 @@ EOF
 					{
 					    // Retrieving table rows
 					    var aData = oTable_{$this->oField->GetGlobalId()}.rows().data().toArray();
+                        
+                        console.log('what is the datatable data ?');
+                        console.log(aData);
 					    
 					    // Retrieving input values
                         var oValues = JSON.parse($('#{$this->oField->GetGlobalId()}').val());
@@ -553,98 +574,129 @@ JS
      * @throws \Exception
      * @throws \CoreException
      */
-	protected function PrepareItems(&$aItems, &$aItemIds)
+	protected function PrepareItems(&$aItems, &$aItemIds, $oOutput)
 	{
 		/** @var \ormLinkSet $oValueSet */
 		$oValueSet = $this->oField->GetCurrentValue();
 		$oValueSet->OptimizeColumnLoad(array($this->oField->GetTargetClass() => $this->oField->GetAttributesToDisplay(true)));
-		while ($oItem = $oValueSet->Fetch())
-		{
+		while ($oItem = $oValueSet->Fetch()) {
 			// In case of indirect linked set, we must retrieve the remote object
-			if ($this->oField->IsIndirect())
-			{
-			    try{
-                    // Note : AllowAllData set to true here instead of checking scope's flag because we are displaying a value that has been set and validated
-                    $oRemoteItem = MetaModel::GetObject($this->oField->GetTargetClass(), $oItem->Get($this->oField->GetExtKeyToRemote()), true, true);
-                }
-                catch(Exception $e)
-                {
-                    // In some cases we can't retrieve an object from a linkedset, eg. when the extkey to remote is 0 due to a database corruption.
-                    // Rather than crashing we rather just skip the object like in the administration console
-                    IssueLog::Error('Could not retrieve object of linkedset in form #'.$this->oField->GetFormPath().' for field #'.$this->oField->GetId().'. Message: '.$e->getMessage());
-                    continue;
-                }
-			}
-			else
-			{
+			if ($this->oField->IsIndirect()) {
+				try {
+					// Note : AllowAllData set to true here instead of checking scope's flag because we are displaying a value that has been set and validated
+					$oRemoteItem = MetaModel::GetObject($this->oField->GetTargetClass(), $oItem->Get($this->oField->GetExtKeyToRemote()), true, true);
+				}
+				catch (Exception $e) {
+					// In some cases we can't retrieve an object from a linkedset, eg. when the extkey to remote is 0 due to a database corruption.
+					// Rather than crashing we rather just skip the object like in the administration console
+					IssueLog::Error('Could not retrieve object of linkedset in form #'.$this->oField->GetFormPath().' for field #'.$this->oField->GetId().'. Message: '.$e->getMessage());
+					continue;
+				}
+			} else {
 				$oRemoteItem = $oItem;
 			}
-			
+
 			// Skip item if not supposed to be displayed
 			$bLimitedAccessItem = $this->oField->IsLimitedAccessItem($oRemoteItem->GetKey());
-			if ($bLimitedAccessItem && !$this->oField->GetDisplayLimitedAccessItems())
-			{
+			if ($bLimitedAccessItem && !$this->oField->GetDisplayLimitedAccessItems()) {
 				continue;
 			}
 
 			$aItemProperties = array(
-				'id' => ($this->oField->IsIndirect() && $oItem->IsNew()) ? -1*$oRemoteItem->GetKey() : $oItem->GetKey(),
-				'target_id' => $oRemoteItem->GetKey(),
-				'name' => $oItem->GetName(),
-				'attributes' => array(),
+				'id'             => ($this->oField->IsIndirect() && $oItem->IsNew()) ? -1 * $oRemoteItem->GetKey() : $oItem->GetKey(),
+				'target_id'      => $oRemoteItem->GetKey(),
+				'name'           => $oItem->GetName(),
+				'attributes'     => array(),
 				'limited_access' => $bLimitedAccessItem,
-				'disabled' => true,
-				'active' => false,
-				'inactive' => true,
+				'disabled'       => true,
+				'active'         => false,
+				'inactive'       => true,
 				'not-selectable' => true,
- 			);
+			);
 
-			// Target object others attributes
-            // TODO: Support for AttributeImage, AttributeBlob
-			foreach ($this->oField->GetAttributesToDisplay(true) as $sAttCode)
-			{
-				if ($sAttCode !== 'id')
-				{
-					$aAttProperties = array(
-						'att_code' => $sAttCode
-					);
+			// Link attributes to display
+			$this->PrepareItem($oItem, $this->oField->GetLinkedClass(), $this->oField->GetLnkAttributesToDisplay(true), true, $aItemProperties, $oOutput);
 
-					$oAttDef = MetaModel::GetAttributeDef($this->oField->GetTargetClass(), $sAttCode);
-					if ($oAttDef->IsExternalKey())
-					{
-						/** @var \AttributeExternalKey $oAttDef */
-						$aAttProperties['value'] = $oRemoteItem->Get($sAttCode . '_friendlyname');
+			// Remote attributes to display
+			$this->PrepareItem($oRemoteItem, $this->oField->GetTargetClass(), $this->oField->GetAttributesToDisplay(true), false, $aItemProperties, $oOutput);
 
-						// Checking if user can access object's external key
-						$sObjectUrl = ApplicationContext::MakeObjectUrl($oAttDef->GetTargetClass(), $oRemoteItem->Get($sAttCode));
-						if(!empty($sObjectUrl))
-						{
-							$aAttProperties['url'] = $sObjectUrl;
-						}
-					}
-					else
-					{
-						$aAttProperties['value'] = $oAttDef->GetAsHTML($oRemoteItem->Get($sAttCode));
-
-						if ($oAttDef instanceof AttributeFriendlyName)
-						{
-							// Checking if user can access object
-							$sObjectUrl = ApplicationContext::MakeObjectUrl(get_class($oRemoteItem), $oRemoteItem->GetKey());
-							if(!empty($sObjectUrl))
-							{
-								$aAttProperties['url'] = $sObjectUrl;
-							}
-						}
-					}
-
-					$aItemProperties['attributes'][$sAttCode] = $aAttProperties;
-				}
-			}
-			
 			$aItems[] = $aItemProperties;
 			$aItemIds[$aItemProperties['id']] = array();
 		}
 		$oValueSet->rewind();
+	}
+
+	protected function PrepareItem(DBObject $oItem, string $sClass, array $aAttributesCodesToDisplay, bool $bIsEditable, array &$aItemProperties, $oOutput)
+	{
+		// Iterate throw attributes...
+		foreach ($aAttributesCodesToDisplay as $sAttCode) {
+
+			if ($sAttCode !== 'id') {
+
+				// Prepare attribute properties
+				$aAttProperties = array(
+					'att_code' => $sAttCode,
+				);
+
+				// Retrieve attribute definition
+				$oAttDef = MetaModel::GetAttributeDef($sClass, $sAttCode);
+
+				// External key specific
+				if ($bIsEditable) {
+
+					$oField = $oAttDef->MakeFormField($oItem);
+					$sFieldRendererClass = static::GetFieldRendererClass($oField);
+
+					/** @var FieldRenderer $oFieldRenderer */
+					$oFieldRenderer = new $sFieldRendererClass($oField);
+					$aAttProperties['value'] = $oFieldRenderer->Render()->GetHtml();
+
+					$sFormFieldOptions = json_encode(array());
+					$oOutput->AddJs(
+						<<<EOF
+    					$("[data-field-id='{$oField->GetId()}'][data-form-path='{$oField->GetFormPath()}']").portal_form_field($sFormFieldOptions);
+EOF
+					);
+				} else if ($oAttDef->IsExternalKey()) {
+
+					/** @var \AttributeExternalKey $oAttDef */
+					$aAttProperties['value'] = $oItem->Get($sAttCode.'_friendlyname');
+
+					// Checking if user can access object's external key
+					$sObjectUrl = ApplicationContext::MakeObjectUrl($sClass, $oItem->Get($sAttCode));
+					if (!empty($sObjectUrl)) {
+						$aAttProperties['url'] = $sObjectUrl;
+					}
+
+				} else { // Others attributes
+
+					$aAttProperties['value'] = $oAttDef->GetAsHTML($oItem->Get($sAttCode));
+
+					if ($oAttDef instanceof AttributeFriendlyName) {
+						// Checking if user can access object
+						$sObjectUrl = ApplicationContext::MakeObjectUrl($sClass, $oItem->GetKey());
+						if (!empty($sObjectUrl)) {
+							$aAttProperties['url'] = $sObjectUrl;
+						}
+					}
+				}
+
+				$aItemProperties['attributes'][$sAttCode] = $aAttProperties;
+			}
+		}
+	}
+
+	public static function GetFieldRendererClass(Field $oField): ?string
+	{
+		$aRegisteredFields = BsFieldRendererMappings::RegisterSupportedFields();
+		$sFieldClass = get_class($oField);
+		foreach ($aRegisteredFields as $aRegisteredField) {
+			if ($aRegisteredField['field'] === $sFieldClass) {
+				return $aRegisteredField['field_renderer'];
+			}
+		}
+
+		return null;
 	}
 
 }
