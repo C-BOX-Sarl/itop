@@ -861,7 +861,7 @@ class ObjectFormManager extends FormManager
 							$oAttDefToDisplay = MetaModel::GetAttributeDef($oField->GetTargetClass(), $sAttCodeToDisplay);
 							$aAttributesToDisplay[$sAttCodeToDisplay] = $oAttDefToDisplay->GetLabel();
 						}
-//						$oField->SetAttributesToDisplay($aAttributesToDisplay);
+						$oField->SetAttributesToDisplay($aAttributesToDisplay);
 					}
 					//    - Filtering links regarding scopes
 					if ($this->oFormHandlerHelper !== null) {

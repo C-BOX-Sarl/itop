@@ -25,6 +25,7 @@ use AttributeFriendlyName;
 use Combodo\iTop\Form\Field\Field;
 use Combodo\iTop\Renderer\Bootstrap\BsFieldRendererMappings;
 use Combodo\iTop\Renderer\FieldRenderer;
+use Combodo\iTop\Renderer\RenderingOutput;
 use DBObject;
 use Dict;
 use Exception;
@@ -649,7 +650,9 @@ JS
 
 					/** @var FieldRenderer $oFieldRenderer */
 					$oFieldRenderer = new $sFieldRendererClass($oField);
-					$aAttProperties['value'] = $oFieldRenderer->Render()->GetHtml();
+					$oFieldOutput = $oFieldRenderer->Render();
+					static::TransferOutputs($oFieldOutput, $oOutput);
+					$aAttProperties['value'] = $oFieldOutput->GetHtml();
 
 					$sFormFieldOptions = json_encode(array());
 					$oOutput->AddJs(
@@ -685,6 +688,23 @@ EOF
 			}
 		}
 	}
+
+	private static function TransferOutputs(RenderingOutput $oFieldOutput, RenderingOutput $oPageOutput)
+	{
+		$oPageOutput->AddJs(
+			$oFieldOutput->GetJs()
+		);
+		$oPageOutput->AddCss(
+			$oFieldOutput->GetCss()
+		);
+		foreach ($oFieldOutput->GetJsFiles() as $sJsFile) {
+			$oPageOutput->AddJsFile($sJsFile);
+		}
+		foreach ($oFieldOutput->GetCssFiles() as $sCssFile) {
+			$oPageOutput->AddCssFile($sCssFile);
+		}
+	}
+
 
 	public static function GetFieldRendererClass(Field $oField): ?string
 	{
