@@ -1282,6 +1282,10 @@ class ObjectFormManager extends FormManager
 										$oLink = MetaModel::NewObject($sLinkedClass);
 										$oLink->Set($oAttDef->GetExtKeyToRemote(), $iObjKey);
 										$oLink->Set($oAttDef->GetExtKeyToMe(), $this->oObject->GetKey());
+										// Set link attributes values...
+										foreach ($aObjdata as $sLinkAttCode => $oAttValue) {
+											$oLink->Set($sLinkAttCode, $oAttValue);
+										}
 									}
 									// ... or adding remote object when linkset id direct
 									else
@@ -1290,15 +1294,25 @@ class ObjectFormManager extends FormManager
 										$oLink = MetaModel::GetObject($sLinkedClass, $iObjKey, false, true);
 									}
 
-									if ($oLink !== null)
-									{
+									if ($oLink !== null) {
 										$oLinkSet->AddItem($oLink);
 									}
 								}
 							}
 
 							// Checking links to modify
-							// TODO: Not implemented yet as we can't change lnk properties in the portal
+							if ($oAttDef->IsIndirect() && isset($value['current'])) {
+								foreach ($value['current'] as $iObjKey => $aObjData) {
+									if ($iObjKey < 0) {
+										continue;
+									}
+									$oLink = MetaModel::GetObject($sLinkedClass, $iObjKey);
+									foreach ($aObjData as $sLinkAttCode => $oAttValue) {
+										$oLink->Set($sLinkAttCode, $oAttValue);
+									}
+									$oLink->DBUpdate();
+								}
+							}
 
 							// Setting value in the object
 							$this->oObject->Set($sAttCode, $oLinkSet);

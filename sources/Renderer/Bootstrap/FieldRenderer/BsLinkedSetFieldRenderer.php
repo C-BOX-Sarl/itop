@@ -333,24 +333,49 @@ JS
                 // Attaching JS widget
                 $sObjectInformationsUrl = $this->oField->GetInformationEndpoint();
                 $oOutput->AddJs(
-<<<EOF
+<<<JS
                 $("[data-field-id='{$this->oField->GetId()}'][data-form-path='{$this->oField->GetFormPath()}']").portal_form_field({
 					'validators': {$this->GetValidatorsAsJson()},
 					'get_current_value_callback': function(me, oEvent, oData){
-						var value = null;
-
-						// Retrieving JSON value as a string and not an object
-						//
-						// Note : The value is passed as a string instead of an array because the attribute would not be included in the posted data when empty.
-						// Which was an issue when deleting all objects from linkedset
-						//
-						// Old code : value = JSON.parse(me.element.find('#{$this->oField->GetGlobalId()}').val());
-						value = me.element.find('#{$this->oField->GetGlobalId()}').val();
-						
+                        
+                    	// Read linked set value as array
+                        var aValue = JSON.parse(me.element.find('#{$this->oField->GetGlobalId()}').val());
+                        
+						// Iterate throw table rows and extract link attributes input values...				
+						$('tbody tr', me.element).each(function(){
+                            
+                        	// Extract link id
+                            const sId = $(this).attr('id');
+                            
+                            // Security
+                        	if(sId !== undefined){
+                                
+                            	// Prepare link attributes values
+                              	const aValues = {};
+                                
+                                // Extract inputs values...  
+                                $('input,select', $(this)).each(function(){
+                                    if($(this).attr('id') !== undefined){
+                                      aValues[$(this).attr('name')] = $(this).val();
+                                    }
+	                            });
+	                            
+                                // Set values
+                                if(aValue.current !== undefined && aValue.current[sId] !== undefined){
+                                    aValue.current[sId] = aValues;
+                                }
+                                const iAddId = -parseInt(sId);
+                              	if(aValue.add !== undefined && aValue.add[iAddId] !== undefined){
+                                    aValue.add[iAddId] = aValues;
+                                }
+                            }
+  
+						});
+                        
 						console.log('what is the current value ?');
-						console.log(value);
+						console.log(aValue);
 
-						return value;
+						return JSON.stringify(aValue);
 					},
 					'set_current_value_callback': function(me, oEvent, oData){
 						// When we have data (meaning that we picked objects from search)
@@ -428,7 +453,7 @@ JS
 						}
 					}
 				});
-EOF
+JS
                 );
 
 				// Rendering table
@@ -643,23 +668,21 @@ JS
 				$oAttDef = MetaModel::GetAttributeDef($sClass, $sAttCode);
 
 				// External key specific
-				if ($bIsEditable) {
+				if ($bIsEditable
+					/*&& $oSecurityHelper->IsActionAllowed(UR_ACTION_MODIFY, $sClass, $oItem->Get('id))*/) {
 
 					$oField = $oAttDef->MakeFormField($oItem);
+
 					$sFieldRendererClass = static::GetFieldRendererClass($oField);
 
-					/** @var FieldRenderer $oFieldRenderer */
-					$oFieldRenderer = new $sFieldRendererClass($oField);
-					$oFieldOutput = $oFieldRenderer->Render();
-					static::TransferOutputs($oFieldOutput, $oOutput);
-					$aAttProperties['value'] = $oFieldOutput->GetHtml();
+					if ($sFieldRendererClass !== null) {
+						/** @var FieldRenderer $oFieldRenderer */
+						$oFieldRenderer = new $sFieldRendererClass($oField);
+						$oFieldOutput = $oFieldRenderer->Render();
+						static::TransferFieldRendererOutput($oFieldOutput, $oOutput);
+						$aAttProperties['value'] = $oFieldOutput->GetHtml();
+					}
 
-					$sFormFieldOptions = json_encode(array());
-					$oOutput->AddJs(
-						<<<EOF
-    					$("[data-field-id='{$oField->GetId()}'][data-form-path='{$oField->GetFormPath()}']").portal_form_field($sFormFieldOptions);
-EOF
-					);
 				} else if ($oAttDef->IsExternalKey()) {
 
 					/** @var \AttributeExternalKey $oAttDef */
@@ -689,7 +712,15 @@ EOF
 		}
 	}
 
-	private static function TransferOutputs(RenderingOutput $oFieldOutput, RenderingOutput $oPageOutput)
+	/**
+	 * Transfer field renderer output to page output.
+	 *
+	 * @param \Combodo\iTop\Renderer\RenderingOutput $oFieldOutput
+	 * @param \Combodo\iTop\Renderer\RenderingOutput $oPageOutput
+	 *
+	 * @return void
+	 */
+	public static function TransferFieldRendererOutput(RenderingOutput $oFieldOutput, RenderingOutput $oPageOutput)
 	{
 		$oPageOutput->AddJs(
 			$oFieldOutput->GetJs()
@@ -705,7 +736,13 @@ EOF
 		}
 	}
 
-
+	/**
+	 * Retrieve a field renderer class.
+	 *
+	 * @param \Combodo\iTop\Form\Field\Field $oField
+	 *
+	 * @return string|null
+	 */
 	public static function GetFieldRendererClass(Field $oField): ?string
 	{
 		$aRegisteredFields = BsFieldRendererMappings::RegisterSupportedFields();

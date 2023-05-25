@@ -1355,10 +1355,16 @@ class ObjectController extends BrickController
 				$oAttDef = MetaModel::GetAttributeDef($sLinkClass, $sAttCode);
 				$oField = $oAttDef->MakeFormField($oNewLink);
 				$sFieldRendererClass = BsLinkedSetFieldRenderer::GetFieldRendererClass($oField);
-				$oFieldRenderer = new $sFieldRendererClass($oField);
+				$sValue = $oAttDef->GetAsHTML($oNewLink->Get($sAttCode));
+				if($sFieldRendererClass !== null){
+					$oFieldRenderer = new $sFieldRendererClass($oField);
+					$oFieldOutput = $oFieldRenderer->Render();
+//					static::TransferFieldRendererOutput($oFieldOutput, $oOutput);
+					$sValue = $oFieldOutput->GetHtml();
+				}
 				$aData['attributes'][$sAttCode] = [
 					'att_code' => $sAttCode,
-					'value'    => $oFieldRenderer->Render()->GetHtml(),
+					'value'    => $sValue,
 				];
 			}
 
