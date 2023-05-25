@@ -354,7 +354,7 @@ JS
                               	const aValues = {};
                                 
                                 // Extract inputs values...  
-                                $('input,select', $(this)).each(function(){
+                                $('input,select,textarea', $(this)).each(function(){
                                     if($(this).attr('id') !== undefined){
                                       aValues[$(this).attr('name')] = $(this).val();
                                     }
