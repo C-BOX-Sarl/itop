@@ -1099,7 +1099,7 @@ class ObjectFormManager extends FormManager
 	{
 		$aData = parent::OnSubmit($aArgs);
 
-		if (! $aData['valid']) {
+		if (!$aData['valid']) {
 			return $aData;
 		}
 
@@ -1286,6 +1286,7 @@ class ObjectFormManager extends FormManager
 										foreach ($aObjdata as $sLinkAttCode => $oAttValue) {
 											$oLink->Set($sLinkAttCode, $oAttValue);
 										}
+										$oLink->DBInsert();
 									}
 									// ... or adding remote object when linkset id direct
 									else

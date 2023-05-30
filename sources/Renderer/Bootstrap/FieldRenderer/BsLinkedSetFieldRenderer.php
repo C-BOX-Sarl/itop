@@ -372,9 +372,6 @@ JS
   
 						});
                         
-						console.log('what is the current value ?');
-						console.log(aValue);
-
 						return JSON.stringify(aValue);
 					},
 					'set_current_value_callback': function(me, oEvent, oData){
@@ -386,10 +383,7 @@ JS
 
 							// Retrieving new rows ids
 							var aObjectIds = Object.keys(oData.values);
-							
-							console.log('what is object id ?');
-							console.log(aObjectIds);
-
+                            
 							// Retrieving rows informations so we can add them
 							$.post(
 								'{$sObjectInformationsUrl}',
@@ -401,10 +395,7 @@ JS
 									aLinkAttCodes: $sLnkAttCodesToDisplayAsJson,
 								},
 								function(oData){
-								
-									console.log('there is new data !');
-									console.log(oData);
-								
+                                    
 									// Updating datatables
 									if(oData.items !== undefined)
 									{
