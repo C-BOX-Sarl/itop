@@ -21,6 +21,8 @@
 namespace Combodo\iTop\Form\Field;
 
 use Closure;
+use ormLinkSet;
+use ormSet;
 
 /**
  * Description of LinkedSetField
@@ -339,5 +341,29 @@ class LinkedSetField extends Field
 	public function IsLimitedAccessItem(int $iItemID)
 	{
 		return in_array($iItemID, $this->aLimitedAccessItemIDs, false);
+	}
+
+	public function Validate()
+	{
+		$bValid = parent::Validate();
+
+		/** @var ormLinkSet $oSet */
+		$oSet = $this->GetCurrentValue();
+
+		/** @var \DBObject $oItem */
+		foreach ($oSet as $oItem) {
+			list($bRes, $aIssues) = $oItem->CheckToWrite();
+			if ($bRes === false) {
+				foreach ($aIssues as $sIssue) {
+					$this->AddErrorMessage($oItem->Get('friendlyname') != '' ? $oItem->Get('friendlyname') : 'New item'.' : '.$sIssue);
+				}
+				$bValid = false;
+			}
+
+		}
+
+		$oSet->Rewind();
+
+		return $bValid;
 	}
 }

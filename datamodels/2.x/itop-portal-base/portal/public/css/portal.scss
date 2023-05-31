@@ -1803,6 +1803,11 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 	text-decoration: line-through;
 }
 
+/**********************************************************/
+/* Shameful area (things that should be refactored soon) */
+/**********************************************************/
+
+/* Hide attributes label in link set edition, will be fixed during attributes refactoring */
 .form_linkedset_wrapper label {
   display: none;
 }

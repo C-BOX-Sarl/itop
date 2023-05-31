@@ -58,15 +58,23 @@ class BsLinkedSetFieldRenderer extends BsFieldRenderer
 
 		// Vars to build the table
 		$sAttributesToDisplayAsJson = json_encode($aAttributesToDisplay);
+//		$sAttributesToDisplayAsJson = json_encode($this->oField->GetAttributesToDisplay());
+//		$sLinkAttributesToDisplayAsJson = json_encode($this->oField->GetLnkAttributesToDisplay());
 		$sAttCodesToDisplayAsJson = json_encode($this->oField->GetAttributesToDisplay(true));
 		$sLnkAttCodesToDisplayAsJson = json_encode($this->oField->GetLnkAttributesToDisplay(true));
 
 
 		$aItems = array();
 		$aItemIds = array();
-		$this->PrepareItems($aItems, $aItemIds, $oOutput);
+		$aAddedItemIds = array();
+		$aAddedTargetIds = array();
+		$this->PrepareItems($aItems, $aItemIds, $oOutput, $aAddedItemIds, $aAddedTargetIds);
 		$sItemsAsJson = json_encode($aItems);
-		$sItemIdsAsJson = utils::EscapeHtml(json_encode(array('current' => $aItemIds)));
+		$sItemIdsAsJson = utils::EscapeHtml(json_encode(array('current' => $aItemIds, 'add' => $aAddedItemIds)));
+
+		foreach ($aAddedTargetIds as $sId) {
+			$aItemIds[$sId] = array();
+		}
 
 		if (!$this->oField->GetHidden()) {
 			// Rendering field
@@ -350,6 +358,10 @@ JS
                             // Security
                         	if(sId !== undefined){
                                 
+                                
+                                console.log('mise ' + sId);
+                                console.log(aValue);
+                                
                             	// Prepare link attributes values
                               	const aValues = {};
                                 
@@ -395,6 +407,9 @@ JS
 									aLinkAttCodes: $sLnkAttCodesToDisplayAsJson,
 								},
 								function(oData){
+                                    
+                                    console.log("item data");
+                                    console.log(oData);
                                     
 									// Updating datatables
 									if(oData.items !== undefined)
@@ -591,12 +606,13 @@ JS
      * @throws \Exception
      * @throws \CoreException
      */
-	protected function PrepareItems(&$aItems, &$aItemIds, $oOutput)
+	protected function PrepareItems(&$aItems, &$aItemIds, $oOutput, &$aAddedItemIds, &$aAddedTargetIds)
 	{
 		/** @var \ormLinkSet $oValueSet */
 		$oValueSet = $this->oField->GetCurrentValue();
 		$oValueSet->OptimizeColumnLoad(array($this->oField->GetTargetClass() => $this->oField->GetAttributesToDisplay(true)));
 		while ($oItem = $oValueSet->Fetch()) {
+
 			// In case of indirect linked set, we must retrieve the remote object
 			if ($this->oField->IsIndirect()) {
 				try {
@@ -638,7 +654,12 @@ JS
 			$this->PrepareItem($oRemoteItem, $this->oField->GetTargetClass(), $this->oField->GetAttributesToDisplay(true), false, $aItemProperties, $oOutput);
 
 			$aItems[] = $aItemProperties;
-			$aItemIds[$aItemProperties['id']] = array();
+			if ($oItem->IsNew()) {
+				$aAddedItemIds[-1 * $aItemProperties['id']] = array();
+				$aAddedTargetIds[] = $oRemoteItem->GetKey();
+			} else {
+				$aItemIds[$aItemProperties['id']] = array();
+			}
 		}
 		$oValueSet->rewind();
 	}

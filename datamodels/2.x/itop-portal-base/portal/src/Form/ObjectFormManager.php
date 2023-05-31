@@ -44,6 +44,7 @@ use Exception;
 use ExceptionLog;
 use InlineImage;
 use IssueLog;
+use LogChannels;
 use MetaModel;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -869,7 +870,7 @@ class ObjectFormManager extends FormManager
 
 						/** @var \ormLinkSet $oFieldOriginalSet */
 						$oFieldOriginalSet = $oField->GetCurrentValue();
-						while ($oLink = $oFieldOriginalSet->Fetch()) {
+						foreach ($oFieldOriginalSet as $oLink) {
 							if ($oField->IsIndirect()) {
 								$iRemoteKey = $oLink->Get($oAttDef->GetExtKeyToRemote());
 							} else {
@@ -1284,9 +1285,13 @@ class ObjectFormManager extends FormManager
 										$oLink->Set($oAttDef->GetExtKeyToMe(), $this->oObject->GetKey());
 										// Set link attributes values...
 										foreach ($aObjdata as $sLinkAttCode => $oAttValue) {
+											if (!is_scalar($oAttValue)) {
+												IssueLog::Debug("ObjectFormManager::OnUpdate invalid link attribute value, $sLinkAttCode is not a scalar value", LogChannels::PORTAL);
+												continue;
+											}
 											$oLink->Set($sLinkAttCode, $oAttValue);
 										}
-										$oLink->DBInsert();
+										$oLinkSet->AddItem($oLink);
 									}
 									// ... or adding remote object when linkset id direct
 									else
@@ -1307,11 +1312,22 @@ class ObjectFormManager extends FormManager
 									if ($iObjKey < 0) {
 										continue;
 									}
-									$oLink = MetaModel::GetObject($sLinkedClass, $iObjKey);
-									foreach ($aObjData as $sLinkAttCode => $oAttValue) {
-										$oLink->Set($sLinkAttCode, $oAttValue);
+									$oLink = null;
+									$oLinkSet->Rewind();
+									foreach ($oLinkSet as $oItem) {
+										if ($oItem->Get('id') != $iObjKey) {
+											continue;
+										}
+										$oLink = $oItem;
+										foreach ($aObjData as $sLinkAttCode => $oAttValue) {
+											if (!is_scalar($oAttValue)) {
+												IssueLog::Debug("ObjectFormManager::OnUpdate invalid link attribute value, $sLinkAttCode is not a scalar value", LogChannels::PORTAL);
+												continue;
+											}
+											$oLink->Set($sLinkAttCode, $oAttValue);
+										}
+										$oLinkSet->ModifyItem($oLink);
 									}
-									$oLink->DBUpdate();
 								}
 							}
 

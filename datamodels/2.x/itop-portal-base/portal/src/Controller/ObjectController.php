@@ -1371,6 +1371,7 @@ class ObjectController extends BrickController
 			$aData['items'][] = $aData;
 		}
 
+		// ajout injection css et js et recupération en client
 		return new JsonResponse($aData);
 	}
 
