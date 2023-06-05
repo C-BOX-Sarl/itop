@@ -121,9 +121,6 @@ $(function()
 			// Submit form
 			if(bIsValid)
 			{
-				console.log("portal form current values");
-				console.log(me.getCurrentValues());
-
 				me._disableFormBeforeLoading();
 				$.post(
 					me.options.endpoint,

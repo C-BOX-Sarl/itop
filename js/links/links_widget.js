@@ -386,10 +386,6 @@ function LinksWidget(id, sClass, sAttCode, iInputId, sSuffix, bDuplicates, oWizH
 				}
 			}
 		});
-
-		console.log('GetUpdatedValue');
-		console.log(aValues);
-
 		return JSON.stringify(aValues);
 	};
 

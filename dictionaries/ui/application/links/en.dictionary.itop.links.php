@@ -71,5 +71,6 @@ Dict::Add('EN US', 'English', 'English', array(
 	'UI:Links:Bulk:LinkExistForOneObject'           => 'One object is linked',
 	'UI:Links:Bulk:LinkExistForXObjects'            => '{count} objects are linked',
 
+	// New item
 	'UI:Links:NewItem' => 'New item',
 ));

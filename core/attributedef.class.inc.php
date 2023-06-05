@@ -2411,7 +2411,7 @@ class AttributeLinkedSet extends AttributeDefinition
 		if (($sTitleAttCode !== null) && !in_array($sTitleAttCode, $aAttCodesToDisplay)) {
 			$aAttCodesToDisplay = array_merge(array($sTitleAttCode), $aAttCodesToDisplay);
 		}
-		// - Adding attribute labels
+		// - Adding attribute properties
 		$aAttributesToDisplay = array();
 		foreach ($aAttCodesToDisplay as $sAttCodeToDisplay) {
 			$oAttDefToDisplay = MetaModel::GetAttributeDef($sTargetClass, $sAttCodeToDisplay);
@@ -2422,7 +2422,7 @@ class AttributeLinkedSet extends AttributeDefinition
 		}
 		$oFormField->SetAttributesToDisplay($aAttributesToDisplay);
 
-		// Append lnk attributes
+		// Append lnk attributes (filtered from zlist)
 		$aLnkAttDefToDisplay = MetaModel::GetZListAttDefsFilteredForIndirectLinkClass($this->m_sHostClass, $this->m_sCode);
 		$aLnkAttributesToDisplay = array();
 		foreach ($aLnkAttDefToDisplay as $oLnkAttDefToDisplay) {

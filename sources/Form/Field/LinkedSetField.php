@@ -23,7 +23,6 @@ namespace Combodo\iTop\Form\Field;
 use Closure;
 use Dict;
 use ormLinkSet;
-use ormSet;
 
 /**
  * Description of LinkedSetField
@@ -105,8 +104,9 @@ class LinkedSetField extends Field
 	}
 
 	/**
-	 *
 	 * @return string
+	 * @since 3.1
+	 *
 	 */
 	public function GetLinkedClass()
 	{
@@ -114,6 +114,8 @@ class LinkedSetField extends Field
 	}
 
 	/**
+	 *
+	 * @since 3.1
 	 *
 	 * @param string $sLinkedClass
 	 *
@@ -270,6 +272,8 @@ class LinkedSetField extends Field
 	/**
 	 * Returns a hash array of attributes to be displayed in the linkedset in the form $sAttCode => $sAttLabel
 	 *
+	 * @since 3.1
+	 *
 	 * @param boolean $bAttCodesOnly If set to true, will return only the attcodes
 	 *
 	 * @return array
@@ -280,6 +284,8 @@ class LinkedSetField extends Field
 	}
 
 	/**
+	 *
+	 * @since 3.1
 	 *
 	 * @param array $aAttributesToDisplay
 	 *
@@ -344,6 +350,7 @@ class LinkedSetField extends Field
 		return in_array($iItemID, $this->aLimitedAccessItemIDs, false);
 	}
 
+	/** @inheritdoc @since 3.1 */
 	public function Validate()
 	{
 		$bValid = parent::Validate();

@@ -1353,7 +1353,7 @@ class ObjectController extends BrickController
 		while ($oObject = $oSet->Fetch()) {
 			// Prepare link data
 			$aObjectData = $this->PrepareObjectInformation($oObject, $aObjectAttCodes);
-			// New link
+			// New link object (needed for renderers)
 			$oNewLink = new $sLinkClass();
 			foreach ($aLinkAttCodes as $sAttCode) {
 				$oAttDef = MetaModel::GetAttributeDef($sLinkClass, $sAttCode);
@@ -1376,7 +1376,6 @@ class ObjectController extends BrickController
 			$aData['items'][] = $aObjectData;
 		}
 
-		// ajout injection css et js et recupération en client
 		return new JsonResponse($aData);
 	}
 
