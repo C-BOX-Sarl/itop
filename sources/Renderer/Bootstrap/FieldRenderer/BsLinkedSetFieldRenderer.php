@@ -288,7 +288,7 @@ EOF
 						},
                         "initComplete": function(){
                             
-                            console.log('initComplete');
+                            // Execute inline js provided by attributes renderers
                             eval(oRenderersJs_{$this->oField->GetGlobalId()});
                             
                         },
