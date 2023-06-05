@@ -860,7 +860,10 @@ class ObjectFormManager extends FormManager
 						foreach ($aAttCodesToDisplay as $sAttCodeToDisplay)
 						{
 							$oAttDefToDisplay = MetaModel::GetAttributeDef($oField->GetTargetClass(), $sAttCodeToDisplay);
-							$aAttributesToDisplay[$sAttCodeToDisplay] = $oAttDefToDisplay->GetLabel();
+							$aAttributesToDisplay[$sAttCodeToDisplay] = [
+								'label'     => $oAttDefToDisplay->GetLabel(),
+								'mandatory' => !$oAttDefToDisplay->IsNullAllowed(),
+							];
 						}
 						$oField->SetAttributesToDisplay($aAttributesToDisplay);
 					}

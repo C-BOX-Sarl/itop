@@ -2415,7 +2415,10 @@ class AttributeLinkedSet extends AttributeDefinition
 		$aAttributesToDisplay = array();
 		foreach ($aAttCodesToDisplay as $sAttCodeToDisplay) {
 			$oAttDefToDisplay = MetaModel::GetAttributeDef($sTargetClass, $sAttCodeToDisplay);
-			$aAttributesToDisplay[$sAttCodeToDisplay] = $oAttDefToDisplay->GetLabel();
+			$aAttributesToDisplay[$sAttCodeToDisplay] = [
+				'label'     => $oAttDefToDisplay->GetLabel(),
+				'mandatory' => !$oAttDefToDisplay->IsNullAllowed(),
+			];
 		}
 		$oFormField->SetAttributesToDisplay($aAttributesToDisplay);
 
@@ -2423,7 +2426,11 @@ class AttributeLinkedSet extends AttributeDefinition
 		$aLnkAttDefToDisplay = MetaModel::GetZListAttDefsFilteredForIndirectLinkClass($this->m_sHostClass, $this->m_sCode);
 		$aLnkAttributesToDisplay = array();
 		foreach ($aLnkAttDefToDisplay as $oLnkAttDefToDisplay) {
-			$aLnkAttributesToDisplay[$oLnkAttDefToDisplay->GetCode()] = $oLnkAttDefToDisplay->GetLabel();
+			$aLnkAttributesToDisplay[$oLnkAttDefToDisplay->GetCode()] = [
+				'link_attr' => true,
+				'label'     => $oLnkAttDefToDisplay->GetLabel(),
+				'mandatory' => !$oLnkAttDefToDisplay->IsNullAllowed(),
+			];
 		}
 		$oFormField->SetLnkAttributesToDisplay($aLnkAttributesToDisplay);
 

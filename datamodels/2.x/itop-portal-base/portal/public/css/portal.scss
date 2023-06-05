@@ -1811,3 +1811,13 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 .form_linkedset_wrapper label {
   display: none;
 }
+
+/* Add mandatory field column label */
+.form_linkedset_wrapper .dataTables_scrollHead th.mandatory:after {
+  content: "*";
+  position: relative;
+  left: 3px;
+  color: #EA7D1E;
+  font-size: 0.9em;
+}
+

@@ -55,11 +55,10 @@ class BsLinkedSetFieldRenderer extends BsFieldRenderer
 
 		// Merge lnk and remote class attributes to display
 		$aAttributesToDisplay = array_merge($this->oField->GetLnkAttributesToDisplay(), $this->oField->GetAttributesToDisplay());
+		$sLinkAttributesToDisplayCount = count($this->oField->GetLnkAttributesToDisplay()) + 1;
 
 		// Vars to build the table
 		$sAttributesToDisplayAsJson = json_encode($aAttributesToDisplay);
-//		$sAttributesToDisplayAsJson = json_encode($this->oField->GetAttributesToDisplay());
-//		$sLinkAttributesToDisplayAsJson = json_encode($this->oField->GetLnkAttributesToDisplay());
 		$sAttCodesToDisplayAsJson = json_encode($this->oField->GetAttributesToDisplay(true));
 		$sLnkAttCodesToDisplayAsJson = json_encode($this->oField->GetLnkAttributesToDisplay(true));
 
@@ -68,6 +67,7 @@ class BsLinkedSetFieldRenderer extends BsFieldRenderer
 		$aItemIds = array();
 		$aAddedItemIds = array();
 		$aAddedTargetIds = array();
+		$this->PrepareJS($this->oField->GetLinkedClass(), $this->oField->GetLnkAttributesToDisplay(true), $oOutput);
 		$this->PrepareItems($aItems, $aItemIds, $oOutput, $aAddedItemIds, $aAddedTargetIds);
 		$sItemsAsJson = json_encode($aItems);
 		$sItemIdsAsJson = utils::EscapeHtml(json_encode(array('current' => $aItemIds, 'add' => $aAddedItemIds)));
@@ -114,7 +114,7 @@ class BsLinkedSetFieldRenderer extends BsFieldRenderer
 			$sTableId = 'table_' . $this->oField->GetGlobalId();
 			// - Output
 			$oOutput->AddHtml(
-<<<EOF
+				<<<EOF
 				<div class="form_linkedset_wrapper collapse" id="{$sFieldWrapperId}">
 					<div class="row">
 						<div class="col-xs-12">
@@ -165,6 +165,7 @@ EOF
 				var oRawDatas_{$this->oField->GetGlobalId()} = {$sItemsAsJson};
 				var oTable_{$this->oField->GetGlobalId()};
 				var oSelectedItems_{$this->oField->GetGlobalId()} = {};
+                var oRenderersJs_{$this->oField->GetGlobalId()} = '';
 
 				var getColumnsDefinition_{$this->oField->GetGlobalId()} = function()
 				{
@@ -197,15 +198,17 @@ EOF
 
 					for(sKey in oColumnProperties_{$this->oField->GetGlobalId()})
 					{
+                        aColumnProperties = oColumnProperties_{$this->oField->GetGlobalId()}[sKey];
 						// Level main column
 						aColumnsDefinition.push({
 							"width": "auto",
 							"searchable": true,
-							"sortable": true,
-							"title": oColumnProperties_{$this->oField->GetGlobalId()}[sKey],
+							"sortable": !aColumnProperties.link_attr,
+							"title": aColumnProperties.label,
 							"defaultContent": "",
 							"type": "html",
 							"data": "attributes."+sKey+".att_code",
+							"className": aColumnProperties.mandatory && aColumnProperties.link_attr ? 'mandatory' : '',
 							"render": function(data, type, row){
 								var cellElem;
 
@@ -220,7 +223,7 @@ EOF
 									cellElem = $('<span></span>');
 								}
 								cellElem.html('<span>' + row.attributes[data].value + '</span>');
-
+                                
 								return cellElem.prop('outerHTML');
 							},
 						});
@@ -234,7 +237,7 @@ EOF
 				// We would just have to override / complete the necessary elements
 				var buildTable_{$this->oField->GetGlobalId()} = function()
 				{
-					var iDefaultOrderColumnIndex = ({$sIsEditable}) ? 1 : 0;
+					var iDefaultOrderColumnIndex = {$sLinkAttributesToDisplayCount};
 
 					// Instantiates datatables
 					oTable_{$this->oField->GetGlobalId()} = $('#{$sTableId}').DataTable({
@@ -270,8 +273,29 @@ EOF
 									},
 								});
 							});
+                            
+                            // Store attributes inline css and js
+                            for (var key in oData.attributes) {
+							 	const aElement = oData.attributes[key];
+                              	if(aElement.css_inline !== undefined){
+                              		$('td:first-child', oRow).append($('<style>' + aElement.css_inline + '</style>'));
+                                }
+	                            if(aElement.js_inline !== undefined){
+                                    oRenderersJs_{$this->oField->GetGlobalId()} += aElement.js_inline;
+	                            }
+							}
+
 						},
+                        "initComplete": function(){
+                            
+                            console.log('initComplete');
+                            eval(oRenderersJs_{$this->oField->GetGlobalId()});
+                            
+                        },
 					});
+                    
+
+                    
 						
 					// Handles items selection/deselection
 					// - Preventing limited access rows to be selected on click
@@ -358,10 +382,6 @@ JS
                             // Security
                         	if(sId !== undefined){
                                 
-                                
-                                console.log('mise ' + sId);
-                                console.log(aValue);
-                                
                             	// Prepare link attributes values
                               	const aValues = {};
                                 
@@ -408,9 +428,6 @@ JS
 								},
 								function(oData){
                                     
-                                    console.log("item data");
-                                    console.log(oData);
-                                    
 									// Updating datatables
 									if(oData.items !== undefined)
 									{
@@ -426,11 +443,15 @@ JS
 												oData.items[i].id = -1 * parseInt(oData.items[i].id);
 												oTable_{$this->oField->GetGlobalId()}.row.add(oData.items[i]);
 											}
-											
-											
+																						
 										}
 										oTable_{$this->oField->GetGlobalId()}.draw();
-										
+                                        
+                                        // Execute inline js for each attributes renderers
+		                                for(key in oData.items[i].attributes){
+		                                    eval(oData.items[i].attributes[key].js_inline)
+		                                }
+                                        
 										// Updating input
 						                updateInputValue_{$this->oField->GetGlobalId()}();
 									}
@@ -506,9 +527,6 @@ EOF
 					    // Retrieving table rows
 					    var aData = oTable_{$this->oField->GetGlobalId()}.rows().data().toArray();
                         
-                        console.log('what is the datatable data ?');
-                        console.log(aData);
-					    
 					    // Retrieving input values
                         var oValues = JSON.parse($('#{$this->oField->GetGlobalId()}').val());
                         oValues.add = {};
@@ -664,6 +682,30 @@ JS
 		$oValueSet->rewind();
 	}
 
+	protected function PrepareJS(string $sClass, array $aAttributesCodesToDisplay, $oOutput)
+	{
+		$oItem = MetaModel::NewObject($sClass);
+
+		// Iterate throw attributes...
+		foreach ($aAttributesCodesToDisplay as $sAttCode) {
+
+			// Retrieve attribute definition
+			$oAttDef = MetaModel::GetAttributeDef($sClass, $sAttCode);
+
+			$oField = $oAttDef->MakeFormField($oItem);
+
+			$sFieldRendererClass = static::GetFieldRendererClass($oField);
+
+			if ($sFieldRendererClass !== null) {
+				/** @var FieldRenderer $oFieldRenderer */
+				$oFieldRenderer = new $sFieldRendererClass($oField);
+				$oFieldOutput = $oFieldRenderer->Render();
+				static::TransferFieldRendererGlobalOutput($oFieldOutput, $oOutput);
+			}
+		}
+
+	}
+
 	protected function PrepareItem(DBObject $oItem, string $sClass, array $aAttributesCodesToDisplay, bool $bIsEditable, array &$aItemProperties, $oOutput)
 	{
 		// Iterate throw attributes...
@@ -680,8 +722,7 @@ JS
 				$oAttDef = MetaModel::GetAttributeDef($sClass, $sAttCode);
 
 				// External key specific
-				if ($bIsEditable
-					/*&& $oSecurityHelper->IsActionAllowed(UR_ACTION_MODIFY, $sClass, $oItem->Get('id))*/) {
+				if ($bIsEditable) {
 
 					$oField = $oAttDef->MakeFormField($oItem);
 
@@ -691,7 +732,8 @@ JS
 						/** @var FieldRenderer $oFieldRenderer */
 						$oFieldRenderer = new $sFieldRendererClass($oField);
 						$oFieldOutput = $oFieldRenderer->Render();
-						static::TransferFieldRendererOutput($oFieldOutput, $oOutput);
+						$aAttProperties['js_inline'] = $oFieldOutput->GetJs();
+						$aAttProperties['css_inline'] = $oFieldOutput->GetCss();
 						$aAttProperties['value'] = $oFieldOutput->GetHtml();
 					}
 
@@ -732,14 +774,8 @@ JS
 	 *
 	 * @return void
 	 */
-	public static function TransferFieldRendererOutput(RenderingOutput $oFieldOutput, RenderingOutput $oPageOutput)
+	public static function TransferFieldRendererGlobalOutput(RenderingOutput $oFieldOutput, RenderingOutput $oPageOutput)
 	{
-		$oPageOutput->AddJs(
-			$oFieldOutput->GetJs()
-		);
-		$oPageOutput->AddCss(
-			$oFieldOutput->GetCss()
-		);
 		foreach ($oFieldOutput->GetJsFiles() as $sJsFile) {
 			$oPageOutput->AddJsFile($sJsFile);
 		}

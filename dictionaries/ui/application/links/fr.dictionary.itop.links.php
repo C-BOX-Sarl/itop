@@ -71,4 +71,6 @@ Dict::Add('FR FR', 'French', 'Français', array(
 	'UI:Links:Bulk:LinkExistForAllObjects'          => 'Tous les objets sont déjà liés',
 	'UI:Links:Bulk:LinkExistForOneObject'           => 'Un objet est lié',
 	'UI:Links:Bulk:LinkExistForXObjects'            => '{count} objets sont liés',
+
+	'UI:Links:NewItem' => 'Nouvel element',
 ));

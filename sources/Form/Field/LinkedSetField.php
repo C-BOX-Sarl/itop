@@ -21,6 +21,7 @@
 namespace Combodo\iTop\Form\Field;
 
 use Closure;
+use Dict;
 use ormLinkSet;
 use ormSet;
 
@@ -355,7 +356,8 @@ class LinkedSetField extends Field
 			list($bRes, $aIssues) = $oItem->CheckToWrite();
 			if ($bRes === false) {
 				foreach ($aIssues as $sIssue) {
-					$this->AddErrorMessage($oItem->Get('friendlyname') != '' ? $oItem->Get('friendlyname') : 'New item'.' : '.$sIssue);
+					$sItem = $oItem->Get('friendlyname') != '' ? $oItem->Get('friendlyname') : Dict::S('UI:Links:NewItem');
+					$this->AddErrorMessage('<b>'.$sItem.' : </b>'.$sIssue);
 				}
 				$bValid = false;
 			}

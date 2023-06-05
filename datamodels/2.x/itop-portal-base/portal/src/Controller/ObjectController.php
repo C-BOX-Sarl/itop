@@ -1313,7 +1313,11 @@ class ObjectController extends BrickController
 		/** @var \Combodo\iTop\Portal\Helper\ScopeValidatorHelper $oScopeValidator */
 		$oScopeValidator = $this->get('scope_validator');
 
-		$aData = array();
+		// Data array
+		$aData = array(
+			'js_inline'  => '',
+			'css_inline' => '',
+		);
 
 		// Retrieving parameters
 		$sObjectClass = $oRequestManipulator->ReadParam('sObjectClass', '');
@@ -1348,7 +1352,7 @@ class ObjectController extends BrickController
 		// Retrieving objects
 		while ($oObject = $oSet->Fetch()) {
 			// Prepare link data
-			$aData = $this->PrepareObjectInformation($oObject, $aObjectAttCodes);
+			$aObjectData = $this->PrepareObjectInformation($oObject, $aObjectAttCodes);
 			// New link
 			$oNewLink = new $sLinkClass();
 			foreach ($aLinkAttCodes as $sAttCode) {
@@ -1356,19 +1360,20 @@ class ObjectController extends BrickController
 				$oField = $oAttDef->MakeFormField($oNewLink);
 				$sFieldRendererClass = BsLinkedSetFieldRenderer::GetFieldRendererClass($oField);
 				$sValue = $oAttDef->GetAsHTML($oNewLink->Get($sAttCode));
-				if($sFieldRendererClass !== null){
+				if ($sFieldRendererClass !== null) {
 					$oFieldRenderer = new $sFieldRendererClass($oField);
 					$oFieldOutput = $oFieldRenderer->Render();
-//					static::TransferFieldRendererOutput($oFieldOutput, $oOutput);
 					$sValue = $oFieldOutput->GetHtml();
 				}
-				$aData['attributes'][$sAttCode] = [
-					'att_code' => $sAttCode,
-					'value'    => $sValue,
+				$aObjectData['attributes'][$sAttCode] = [
+					'att_code'   => $sAttCode,
+					'value'      => $sValue,
+					'css_inline' => $oFieldOutput->GetCss(),
+					'js_inline'  => $oFieldOutput->GetJs(),
 				];
 			}
 
-			$aData['items'][] = $aData;
+			$aData['items'][] = $aObjectData;
 		}
 
 		// ajout injection css et js et recupération en client
@@ -1379,7 +1384,7 @@ class ObjectController extends BrickController
 	 * Prepare a DBObject information as an array for a client side usage (typically, add a row in a table)
 	 *
 	 * @param \DBObject $oObject
-	 * @param array     $aAttCodes
+	 * @param array $aAttCodes
 	 *
 	 * @return array
 	 *
